@@ -13,25 +13,19 @@ void MyMesh::GenerateCircle(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	if (a_nSubdivisions > 360)
 		a_nSubdivisions = 360;
 
-	/*
-		Calculate a_nSubdivisions number of points around a center point in a radial manner
-		then call the AddTri function to generate a_nSubdivision number of faces
-
-		x=cos, y=sin
-
-		three pts: center, center + sin, cos radius, prev point
-
-		x= 0 + cos(theta)
-		theta = 360/sub deg to rad
-	*/
-	
+	//change in angle in radians 
 	float theta = (360.0f / a_nSubdivisions) * (PI/180.0f);
 
+	//center of the triangle
 	vector3 triCenter(0.0f, 0.0f, 0.0f);
+
+	//new point
 	vector3 triNewPoint((a_fRadius * cosf(theta)), (a_fRadius * sinf(theta)), 0.0f);
+
+	//previous point
 	vector3 triPrevPoint;
 
-
+	//draws each triangle
 	for (int i = 2; i <= a_nSubdivisions; i++)
 	{
 		triPrevPoint = triNewPoint;
@@ -39,10 +33,10 @@ void MyMesh::GenerateCircle(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 		AddTri(triCenter, triPrevPoint, triNewPoint);
 	}
 
-	AddTri(triCenter, triPrevPoint, triNewPoint);
+	//draws final triangle connecting to beginning
 	triPrevPoint = triNewPoint;
 	triNewPoint = vector3((a_fRadius * cosf(theta)), (a_fRadius * sinf(theta)), 0.0f);
-	AddTri(triCenter, triPrevPoint, triNewPoint);
+	//AddTri(triCenter, triPrevPoint, triNewPoint);
 
 
 	// Adding information about color
