@@ -36,7 +36,7 @@ void MyMesh::GenerateCircle(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	//draws final triangle connecting to beginning
 	triPrevPoint = triNewPoint;
 	triNewPoint = vector3((a_fRadius * cosf(theta)), (a_fRadius * sinf(theta)), 0.0f);
-	//AddTri(triCenter, triPrevPoint, triNewPoint);
+	AddTri(triCenter, triPrevPoint, triNewPoint);
 
 
 	// Adding information about color
