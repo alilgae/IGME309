@@ -1,4 +1,5 @@
 #include "MyMesh.h"
+#include <cmath>
 void MyMesh::GenerateCircle(float a_fRadius, int a_nSubdivisions, vector3 a_v3Color)
 {
 	Release();
@@ -15,10 +16,34 @@ void MyMesh::GenerateCircle(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	/*
 		Calculate a_nSubdivisions number of points around a center point in a radial manner
 		then call the AddTri function to generate a_nSubdivision number of faces
+
+		x=cos, y=sin
+
+		three pts: center, center + sin, cos radius, prev point
+
+		x= 0 + cos(theta)
+		theta = 360/sub deg to rad
 	*/
-	AddTri(	vector3(0.0f, 0.0f, 0.0f),
-			vector3(1.0f, 0.0f, 0.0f),
-			vector3(0.77f, 0.77f, 0.0f));
+	
+	float theta = (360.0f / a_nSubdivisions) * (PI/180.0f);
+
+	vector3 triCenter(0.0f, 0.0f, 0.0f);
+	vector3 triNewPoint((a_fRadius * cosf(theta)), (a_fRadius * sinf(theta)), 0.0f);
+	vector3 triPrevPoint;
+
+
+	for (int i = 2; i <= a_nSubdivisions; i++)
+	{
+		triPrevPoint = triNewPoint;
+		triNewPoint = vector3((a_fRadius * cosf(theta * i)), (a_fRadius * sinf(theta * i)), 0.0f);
+		AddTri(triCenter, triPrevPoint, triNewPoint);
+	}
+
+	AddTri(triCenter, triPrevPoint, triNewPoint);
+	triPrevPoint = triNewPoint;
+	triNewPoint = vector3((a_fRadius * cosf(theta)), (a_fRadius * sinf(theta)), 0.0f);
+	AddTri(triCenter, triPrevPoint, triNewPoint);
+
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
