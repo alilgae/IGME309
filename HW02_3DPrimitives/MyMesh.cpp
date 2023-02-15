@@ -60,8 +60,24 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	//const variables 
+	const vector3 CENTER(0, 0, 0), TOP(0, a_fHeight, 0);
+	const float THETA = (360.0f / a_nSubdivisions) * (PI / 180.0f);
+
+	//changing vertices 
+	vector3 newVert((a_fRadius * cosf(THETA)), 0.0f, (a_fRadius * -sinf(THETA))), prevVert = newVert;
+
+	//draw base, draw sides 
+	for (int i = 2; i <= a_nSubdivisions+1; i++)
+	{
+		newVert = vector3((a_fRadius * cosf(THETA * i)), 0.0f, (a_fRadius * -sinf(THETA * i)));
+		
+		AddTri(TOP, prevVert, newVert);
+		AddTri(CENTER, vector3(prevVert.x, prevVert.y, -prevVert.z), vector3(newVert.x, newVert.y, -newVert.z));
+
+		prevVert = newVert;
+	}
+	
 	// -------------------------------
 
 	// Adding information about color
@@ -84,8 +100,28 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	//const variables
+	const vector3 CENTER_BOTTOM(0, 0, 0), CENTER_TOP(0, a_fHeight, 0);
+	const float THETA = (360.0f / a_nSubdivisions) * (PI / 180.0f);
+
+	//changing vertices variables 
+	vector3 newVertBtm((a_fRadius * cosf(THETA)), 0.0f,		 (a_fRadius * -sinf(THETA))), prevVertBtm = newVertBtm;
+	vector3 newVertTop((a_fRadius * cosf(THETA)), a_fHeight, (a_fRadius * -sinf(THETA))), prevVertTop = newVertTop;
+	
+	//draw btm, draw top, draw quad sides 
+	for (int i = 2; i <= a_nSubdivisions + 1; i++)
+	{
+		newVertBtm = vector3((a_fRadius * cosf(THETA * i)), 0.0f, (a_fRadius * -sinf(THETA * i)));
+		newVertTop = vector3(newVertBtm.x, a_fHeight, newVertBtm.z);
+
+		AddTri(CENTER_TOP, prevVertTop, newVertTop);
+		AddTri(CENTER_BOTTOM, newVertBtm, prevVertBtm);
+		AddQuad(prevVertBtm, newVertBtm, prevVertTop, newVertTop);
+
+		prevVertBtm = newVertBtm;
+		prevVertTop = newVertTop;
+	}
+	
 	// -------------------------------
 
 	// Adding information about color
@@ -114,8 +150,40 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	//const variables
+	const float THETA = (360.0f / a_nSubdivisions) * (PI / 180.0f);
+	const vector3 CENTER_TOP(0.0f, a_fHeight, 0.0f);
+
+	//changing vertices variables 
+	vector3 newInnerTopVert((a_fInnerRadius * cosf(THETA)), a_fHeight, (a_fInnerRadius * -sinf(THETA))), prevInnerTopVert = newInnerTopVert;
+	vector3 newOuterTopVert((a_fOuterRadius * cosf(THETA)), a_fHeight, (a_fOuterRadius * -sinf(THETA))), prevOuterTopVert = newOuterTopVert;
+	
+	vector3 newInnerBottomVert((a_fInnerRadius * cosf(THETA)), 0.0f, (a_fInnerRadius * -sinf(THETA))), prevInnerBottomVert = newInnerBottomVert;
+	vector3 newOuterBottomVert((a_fOuterRadius * cosf(THETA)), 0.0f, (a_fOuterRadius * -sinf(THETA))), prevOuterBottomVert = newOuterBottomVert;
+
+	//draw btm, draw top, draw sides 
+	for (int i = 2; i <= a_nSubdivisions + 1; i++)
+	{
+		newInnerTopVert = vector3((a_fInnerRadius * cosf(THETA * i)), a_fHeight, (a_fInnerRadius * -sinf(THETA * i)));
+		newOuterTopVert = vector3((a_fOuterRadius * cosf(THETA * i)), a_fHeight, (a_fOuterRadius * -sinf(THETA * i)));
+		newInnerBottomVert = vector3((a_fInnerRadius * cosf(THETA * i)), 0.0f, (a_fInnerRadius * -sinf(THETA * i)));
+		newOuterBottomVert = vector3((a_fOuterRadius * cosf(THETA * i)), 0.0f, (a_fOuterRadius * -sinf(THETA * i)));
+
+		//top
+		AddQuad(prevOuterTopVert, newOuterTopVert, prevInnerTopVert, newInnerTopVert);
+
+		//bottom
+		AddQuad(newOuterBottomVert, prevOuterBottomVert, newInnerBottomVert, prevInnerBottomVert);
+
+		//sides
+		AddQuad(prevOuterBottomVert, newOuterBottomVert, prevOuterTopVert, newOuterTopVert);
+		AddQuad(newInnerBottomVert, prevInnerBottomVert, newInnerTopVert, prevInnerTopVert);
+
+		prevInnerTopVert = newInnerTopVert;
+		prevOuterTopVert = newOuterTopVert;
+		prevInnerBottomVert = newInnerBottomVert;
+		prevOuterBottomVert = newOuterBottomVert;
+	}
 	// -------------------------------
 
 	// Adding information about color
@@ -146,8 +214,11 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
+	//const var
+	//const float THETA_TORUS = (360.0f / a_nSubdivisionsA) * (PI / 180.0f), THETA_CYLINDER = (360.0f / a_nSubdivisionsB) * (PI / 180.0f);
+	const float THETA_TORUS = (360.0f / 16) * (PI / 180.0f), THETA_CYLINDER = (360.0f / 8) * (PI / 180.0f), 
+		CYLINDER_RADIUS = (a_fOuterRadius-a_fInnerRadius)/2;
+
 	// -------------------------------
 
 	// Adding information about color
