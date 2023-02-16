@@ -215,9 +215,39 @@ void MyMesh::GenerateTorus(float a_fOuterRadius, float a_fInnerRadius, int a_nSu
 	Init();
 
 	//const var
-	//const float THETA_TORUS = (360.0f / a_nSubdivisionsA) * (PI / 180.0f), THETA_CYLINDER = (360.0f / a_nSubdivisionsB) * (PI / 180.0f);
-	const float THETA_TORUS = (360.0f / 16) * (PI / 180.0f), THETA_CYLINDER = (360.0f / 8) * (PI / 180.0f), 
-		CYLINDER_RADIUS = (a_fOuterRadius-a_fInnerRadius)/2;
+	const float THETA_TORUS = (360.0f / a_nSubdivisionsA) * (PI / 180.0f), THETA_CIRCLE = (360.0f / a_nSubdivisionsB) * (PI / 180.0f),
+		RADIUS_CIRCLE = (a_fOuterRadius-a_fInnerRadius)/2, RADIUS_TORUS = a_fInnerRadius + RADIUS_CIRCLE;
+
+	//list of verts for each circle
+	std::vector<vector3> prevCircle, newCircle;
+	
+	//initialize lists 
+	for (int j = 1; j <= a_nSubdivisionsB + 1; j++)
+	{
+		//generate circle of vertices 
+		for (int i = 1; i <= a_nSubdivisionsA + 1; i++)
+		{
+			newCircle.push_back(
+				vector3(
+					(RADIUS_TORUS + RADIUS_CIRCLE * cosf(THETA_CIRCLE * i)) * cosf(THETA_TORUS * j),
+					(RADIUS_CIRCLE * sinf(THETA_CIRCLE * i)),
+					(RADIUS_TORUS + RADIUS_CIRCLE * cosf(THETA_CIRCLE * i)) * -sinf(THETA_TORUS * j)
+				));
+		}
+
+		//draw quads connecting points in the two circles 
+		if (prevCircle.size() > 0)
+		{
+			for (int i = 1; i < newCircle.size(); i++)
+			{
+				AddQuad(newCircle[i - 1], newCircle[i], prevCircle[i - 1], prevCircle[i]);
+			}
+		}
+
+		prevCircle = newCircle;
+		newCircle.clear();
+
+	}
 
 	// -------------------------------
 
