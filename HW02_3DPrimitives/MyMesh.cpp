@@ -272,8 +272,50 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
+	//consts
+	const float RADIUS = a_fRadius, THETA = PI / a_nSubdivisions;
+
+	//list of all the verts
+	std::vector<vector3> verts;
+	
+	//whole sphere
+	for (int j = 0; j < a_nSubdivisions; j++)
+	{
+		//each level 
+		for (int i = 0; i < a_nSubdivisions; i++)
+		{
+			verts.push_back(vector3(
+				RADIUS * sinf(THETA * i) * cosf(THETA * 2 * j),
+				RADIUS * sinf(THETA * i) * sinf(THETA * 2 * j),
+				RADIUS * cosf(THETA * i)
+			));
+
+			verts.push_back(vector3(
+				RADIUS * sinf(THETA * (i + 1)) * cosf(THETA * 2 * j),
+				RADIUS * sinf(THETA * (i + 1)) * sinf(THETA * 2 * j),
+				RADIUS * cosf(THETA * (i + 1))
+			));
+
+			verts.push_back(vector3(
+				RADIUS * sinf(THETA * i) * cosf(THETA * 2 * (j + 1)),
+				RADIUS * sinf(THETA * i) * sinf(THETA * 2 * (j + 1)),
+				RADIUS * cosf(THETA * i)
+			));
+
+			verts.push_back(vector3(
+				RADIUS * sinf(THETA * (i + 1)) * cosf(THETA * 2 * (j + 1)),
+				RADIUS * sinf(THETA * (i + 1)) * sinf(THETA * 2 * (j + 1)),
+				RADIUS * cosf(THETA * (i + 1))
+			));
+		}
+	}
+
+	//drawing the whole sphere 
+	for (int i = 3; i < verts.size(); i += 4)
+	{
+		AddQuad(verts[i - 3], verts[i - 2], verts[i - 1], verts[i]);
+	}
+
 	// -------------------------------
 
 	// Adding information about color
