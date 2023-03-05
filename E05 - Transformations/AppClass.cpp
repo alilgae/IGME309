@@ -39,7 +39,60 @@ void Application::Display(void)
 	matrix4 m4Projection = m_pCameraMngr->GetProjectionMatrix();
 	matrix4 m4View = m_pCameraMngr->GetViewMatrix();
 
-	m_pMesh->Render(m4Projection, m4View, ToMatrix4(m_qArcBall));
+	static float displacement = 0;
+	displacement += 0.01;
+
+	//top row
+	m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(-3 + displacement, 4, 0)));
+	m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(3 + displacement, 4, 0)));
+
+	//second row
+	m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(-2 + displacement, 3, 0)));
+	m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(2 + displacement, 3, 0)));
+
+	//third
+	for (int i = -3; i <= 3; i++)
+	{
+		m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(i + displacement, 2, 0)));
+	}
+
+	//fourth
+	for (int i = -4; i <= 4; i++)
+	{
+		if (i == 2 || i == -2) continue;
+		m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(i + displacement, 1, 0)));
+	}
+
+	//fifth
+	for (int i = -5; i <= 5; i++)
+	{
+		m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(i + displacement, 0, 0)));
+	}
+
+	//sixth
+	for (int i = -5; i <= 5; i++)
+	{
+		if (i == 4 || i == -4) continue;
+		m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(i + displacement, -1, 0)));
+	}
+
+	//seventh
+	for (int i = -5; i <= 5; i++)
+	{
+		if(i == -5 || i == 5 || i == -3 || i == 3)
+			m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(i + displacement, -2, 0)));
+	}
+
+	//eighth 
+	for (int i = -2; i <= 2; i++)
+	{
+		if (i == 0) continue;
+		m_pMesh->Render(m4Projection, m4View, glm::translate(vector3(i + displacement, -3, 0)));
+	}
+	
+
+
+
 
 	// draw a skybox
 	m_pModelMngr->AddSkyboxToRenderList();
