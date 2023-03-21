@@ -87,6 +87,8 @@ void Application::Display(void)
 		break;
 	case 7:
 		m_pCamera->ResetCamera();
+
+		m_pCamera->SetFOV(-45);
 		break;
 	}
 
