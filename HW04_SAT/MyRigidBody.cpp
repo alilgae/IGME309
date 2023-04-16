@@ -3,9 +3,124 @@ using namespace BTX;
 //Allocation
 uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 {
-	//TODO: Calculate the SAT algorithm I STRONGLY suggest you use the
-	//Real Time Collision detection algorithm for OBB here but feel free to
-	//implement your own solution.
+	//if there isn't another shape there
+	if (!a_pOther) return 16;
+
+	//get x, y, and z axis
+	quaternion modelRotation = quaternion(this->GetModelMatrix());
+	quaternion otherRotation = quaternion(a_pOther->GetModelMatrix());
+
+	// (u) - local axis
+	vector3 modelAxes[3] = { modelRotation * AXIS_X, modelRotation * AXIS_Y, modelRotation * AXIS_Z };
+	vector3 otherAxes[3] = { otherRotation * AXIS_X, otherRotation * AXIS_Y, otherRotation * AXIS_Z };
+
+	float ra, rb;
+	glm::mat3 R, AbsR;
+	// Compute rotation matrix expressing b in a’s coordinate frame
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			R[i][j] = dot(modelAxes[i], otherAxes[j]);
+		}
+	}
+
+	// Compute translation vector t
+	vector3 t = a_pOther->GetCenterGlobal() - this->GetCenterGlobal();
+	// Bring translation into a’s coordinate frame
+	t = vector3(dot(t, modelAxes[0]), dot(t, modelAxes[1]), dot(t, modelAxes[2]));
+	
+	// Compute common subexpressions. Add in an epsilon term to
+	// counteract arithmetic errors when two edges are parallel and
+	// their cross product is (near) null (see text for details)
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			AbsR[i][j] = std::abs(R[i][j]);
+		}
+	}
+
+	// Test axes L = A0, L = A1, L = A2
+	for (int i = 0; i < 3; i++) 
+	{
+		ra = this->GetHalfWidth()[i];
+
+		rb = (a_pOther->GetHalfWidth()[0] * AbsR[i][0] +
+			 a_pOther->GetHalfWidth()[1] * AbsR[i][1] +
+			 a_pOther->GetHalfWidth()[2] * AbsR[i][2]);
+		
+		if (std::abs(t[i]) > ra + rb) 
+			return i+1;
+	}
+	// Test axes L = B0, L = B1, L = B2
+	for (int i = 0; i < 3; i++) 
+	{
+		ra = (this->GetHalfWidth()[0] * AbsR[0][i] + 
+			 this->GetHalfWidth()[1] * AbsR[1][i] + 
+			 this->GetHalfWidth()[2] * AbsR[2][i]);
+
+		rb = a_pOther->GetHalfWidth()[i];
+		
+		if (std::abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb) 
+			return i+4;
+	}
+
+	// Test axis L = A0 x B0
+	ra = this->GetHalfWidth()[1] * AbsR[2][0] + this->GetHalfWidth()[2] * AbsR[1][0];
+	rb = a_pOther->GetHalfWidth()[1] * AbsR[0][2] + a_pOther->GetHalfWidth()[2] * AbsR[0][1];
+	if (std::abs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) 
+		return 7;
+
+	// Test axis L = A0 x B1
+	ra = this->GetHalfWidth()[1] * AbsR[2][1] + this->GetHalfWidth()[2] * AbsR[1][1];
+	rb = a_pOther->GetHalfWidth()[0] * AbsR[0][2] + a_pOther->GetHalfWidth()[2] * AbsR[0][0];
+	if (std::abs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) 
+		return 8;
+
+	// Test axis L = A0 x B2
+	ra = this->GetHalfWidth()[1] * AbsR[2][2] + this->GetHalfWidth()[2] * AbsR[1][2];
+	rb = a_pOther->GetHalfWidth()[0] * AbsR[0][1] + a_pOther->GetHalfWidth()[1] * AbsR[0][0];
+	if (std::abs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) 
+		return 9;
+
+	// Test axis L = A1 x B0
+	ra = this->GetHalfWidth()[0] * AbsR[2][0] + this->GetHalfWidth()[2] * AbsR[0][0];
+	rb = a_pOther->GetHalfWidth()[1] * AbsR[1][2] + a_pOther->GetHalfWidth()[2] * AbsR[1][1];
+	if (std::abs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) 
+		return 10;
+
+	// Test axis L = A1 x B1
+	ra = this->GetHalfWidth()[0] * AbsR[2][1] + this->GetHalfWidth()[2] * AbsR[0][1];
+	rb = a_pOther->GetHalfWidth()[0] * AbsR[1][2] + a_pOther->GetHalfWidth()[2] * AbsR[1][0];
+	if (std::abs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) 
+		return 11;
+
+	// Test axis L = A1 x B2
+	ra = this->GetHalfWidth()[0] * AbsR[2][2] + this->GetHalfWidth()[2] * AbsR[0][2];
+	rb = a_pOther->GetHalfWidth()[0] * AbsR[1][1] + a_pOther->GetHalfWidth()[1] * AbsR[1][0];
+	if (std::abs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) 
+		return 12;
+
+	// Test axis L = A2 x B0
+	ra = this->GetHalfWidth()[0] * AbsR[1][0] + this->GetHalfWidth()[1] * AbsR[0][0];
+	rb = a_pOther->GetHalfWidth()[1] * AbsR[2][2] + a_pOther->GetHalfWidth()[2] * AbsR[2][1];
+	if (std::abs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) 
+		return 13;
+
+	// Test axis L = A2 x B1
+	ra = this->GetHalfWidth()[0] * AbsR[1][1] + this->GetHalfWidth()[1] * AbsR[0][1];
+	rb = a_pOther->GetHalfWidth()[0] * AbsR[2][2] + a_pOther->GetHalfWidth()[2] * AbsR[2][0];
+	if (std::abs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) 
+		return 14;
+
+	// Test axis L = A2 x B2
+	ra = this->GetHalfWidth()[0] * AbsR[1][2] + this->GetHalfWidth()[1] * AbsR[0][2];
+	rb = a_pOther->GetHalfWidth()[0] * AbsR[2][1] + a_pOther->GetHalfWidth()[1] * AbsR[2][0];
+	if (std::abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) 
+		return 15;
+
+	//if there are no planes to be found between two objects, they are colliding 
 	return BTXs::eSATResults::SAT_NONE;
 }
 bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
@@ -20,6 +135,8 @@ bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
 	if (bColliding) //they are colliding with bounding sphere
 	{
 		uint nResult = SAT(a_pOther);
+
+		if (nResult != 0 || nResult == 16) bColliding = false;
 
 		if (bColliding) //The SAT shown they are colliding
 		{

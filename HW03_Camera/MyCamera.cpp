@@ -56,8 +56,8 @@ void MyCamera::MoveSideways(float a_fDistance)
 	//get yaw, rotate 90 degrees around the y axis, move towards it 
 	vector3 direction = m_v3Target - m_v3Position;
 
-	//uses [0, 1
-	//		-1,  0] rotation matrix
+	//uses [ 0, 1
+	//		-1, 0] rotation matrix
 	direction.y = 0;
 	float temp = direction.x;
 	direction.x = -direction.z;
