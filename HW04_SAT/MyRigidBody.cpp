@@ -50,8 +50,8 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 			 a_pOther->GetHalfWidth()[1] * AbsR[i][1] +
 			 a_pOther->GetHalfWidth()[2] * AbsR[i][2]);
 		
-		if (std::abs(t[i]) > ra + rb) 
-			return i+1;
+		if (std::abs(t[i]) > ra + rb)
+			return i + 1;
 	}
 	// Test axes L = B0, L = B1, L = B2
 	for (int i = 0; i < 3; i++) 
@@ -136,7 +136,7 @@ bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
 	{
 		uint nResult = SAT(a_pOther);
 
-		if (nResult != 0 || nResult == 16) bColliding = false;
+		if (nResult != 0) bColliding = false;
 
 		if (bColliding) //The SAT shown they are colliding
 		{
@@ -405,3 +405,4 @@ void MyRigidBody::AddToRenderList(void)
 			m_pModelMngr->AddWireCubeToRenderList(glm::translate(GetCenterGlobal()) * glm::scale(m_v3ARBBSize), C_YELLOW);
 	}
 }
+
