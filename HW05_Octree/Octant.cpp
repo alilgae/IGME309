@@ -78,8 +78,21 @@ void Octant::Display(vector3 a_v3Color)
 {
 	//this is meant to be a recursive method, in starter code will only display the root
 	//even if other objects are created
-	m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center) *
-		glm::scale(vector3(m_fSize)), a_v3Color);
+	//m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center) *
+		//glm::scale(vector3(m_fSize)), a_v3Color);
+
+	//base case - if there are no children
+	if (this->m_uChildren <= 0) 
+		m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center)* glm::scale(vector3(m_fSize)), a_v3Color);
+	//recursive case - if there are children, loop through until you find leaf nodes 
+	else 
+	{
+		for (int i = 0; i < this->m_uChildren; i++)
+		{
+			return this->m_lChild.at(i)->Display(a_v3Color);
+		}
+	}
+	
 }
 void Octant::Subdivide(void)
 {
@@ -92,14 +105,20 @@ void Octant::Subdivide(void)
 		return;
 
 	//Subdivide the space and allocate 8 children
-	for (int x = 0; x < 2; x++)
+	//loop through +/- 
+	for (int x = -1; x <= 1; x+=2)
 	{
-		for (int y = 0; y < 2; y++) 
+		for (int y = -1; y <= 1; y+=2) 
 		{
-			for (int z = 0; z < 2; z++)
+			for (int z = -1; z <= 1; z+=2)
 			{
+				//c = pc.x +/- pc.h/2
+				float hw = (this->GetSize()/2);
+				vector3 center = vector3(	this->m_v3Center.x + (x * hw), 
+											this->m_v3Center.y + (y * hw), 
+											this->m_v3Center.z + (z * hw));
 				this->m_uChildren++;
-				Octant* newOct = &Octant(this->m_v3Center, this->m_fSize);
+				Octant* newOct = &Octant(center, hw);
 				this->m_lChild.push_back(newOct);
 			}
 		}
