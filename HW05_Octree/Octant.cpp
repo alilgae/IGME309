@@ -42,8 +42,15 @@ Octant::Octant(uint a_nMaxLevel, uint a_nIdealEntityCount)
 	}
 	
 	//convert them all to be the same length 
+	float length = max.x - min.x;
+	if (max.y - min.y > length) length = max.y - min.y;
+	if (max.z - min.z > length) length = max.z - min.z;
+
+	length /= 2.0f;
 
 	//adjust min and max to be cube shaped 
+	min = vector3(m_v3Center.x - length, m_v3Center.y - length, m_v3Center.z - length);
+	max = vector3(m_v3Center.x + length, m_v3Center.y + length, m_v3Center.z + length);
 
 	//push back min and max values 
 	lMinMax.push_back(min);
@@ -104,6 +111,8 @@ void Octant::Subdivide(void)
 	if (m_uChildren != 0)
 		return;
 
+	//if there are less than ideal entities, return;
+
 	//Subdivide the space and allocate 8 children
 	//loop through +/- 
 	for (int x = -1; x <= 1; x+=2)
@@ -128,7 +137,9 @@ void Octant::Subdivide(void)
 bool Octant::ContainsAtLeast(uint a_nEntities)
 {
 	//You need to check how many entity objects live within this octant
-	return false; //return something for the sake of start up code
+	uint total = 0;
+
+	return total > a_nEntities; //return something for the sake of start up code
 }
 void Octant::AssignIDtoEntity(void)
 {
