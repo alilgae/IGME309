@@ -24,12 +24,32 @@ Octant::Octant(uint a_nMaxLevel, uint a_nIdealEntityCount)
 	//want in it, remember each subdivision will create 8 children for this octant but not all children
 	//of those children will have children of their own
 
-	//The following is a made-up size, you need to make sure it is measuring all the object boxes in the world
 	std::vector<vector3> lMinMax;
-	lMinMax.push_back(vector3(-50.0f));
-	lMinMax.push_back(vector3(25.0f));
-	RigidBody pRigidBody = RigidBody(lMinMax);
+	vector3 min, max, current;
 
+	//get min and max from entity manager
+	for (int i = 0; i < m_pEntityMngr->GetEntityCount(); i++)
+	{
+		current = m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetMinGlobal();
+
+		//get min and max
+		if (min.x > current.x) min.x = current.x;
+		if (max.x < current.x) max.x = current.x;
+		if (min.y > current.y) min.y = current.y;
+		if (max.y < current.y) max.y = current.y;
+		if (min.z > current.z) min.z = current.z;
+		if (max.z < current.z) max.z = current.z;
+	}
+	
+	//convert them all to be the same length 
+
+	//adjust min and max to be cube shaped 
+
+	//push back min and max values 
+	lMinMax.push_back(min);
+	lMinMax.push_back(max);
+
+	RigidBody pRigidBody = RigidBody(lMinMax);
 
 	//The following will set up the values of the octant, make sure the are right, the rigid body at start
 	//is NOT fine, it has made-up values
@@ -72,6 +92,19 @@ void Octant::Subdivide(void)
 		return;
 
 	//Subdivide the space and allocate 8 children
+	for (int x = 0; x < 2; x++)
+	{
+		for (int y = 0; y < 2; y++) 
+		{
+			for (int z = 0; z < 2; z++)
+			{
+				this->m_uChildren++;
+				Octant* newOct = &Octant(this->m_v3Center, this->m_fSize);
+				this->m_lChild.push_back(newOct);
+			}
+		}
+		
+	}
 }
 bool Octant::ContainsAtLeast(uint a_nEntities)
 {

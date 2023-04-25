@@ -14,7 +14,7 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	vector3 modelAxes[3] = { modelRotation * AXIS_X, modelRotation * AXIS_Y, modelRotation * AXIS_Z };
 	vector3 otherAxes[3] = { otherRotation * AXIS_X, otherRotation * AXIS_Y, otherRotation * AXIS_Z };
 
-	float ra, rb;
+	float rotationA, rotationB;
 	glm::mat3 R, AbsR;
 	// Compute rotation matrix expressing b in a’s coordinate frame
 	for (int i = 0; i < 3; i++)
@@ -26,9 +26,9 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	}
 
 	// Compute translation vector t
-	vector3 t = a_pOther->GetCenterGlobal() - this->GetCenterGlobal();
+	vector3 translation = a_pOther->GetCenterGlobal() - this->GetCenterGlobal();
 	// Bring translation into a’s coordinate frame
-	t = vector3(dot(t, modelAxes[0]), dot(t, modelAxes[1]), dot(t, modelAxes[2]));
+	translation = vector3(dot(translation, modelAxes[0]), dot(translation, modelAxes[1]), dot(translation, modelAxes[2]));
 	
 	// Compute common subexpressions. Add in an epsilon term to
 	// counteract arithmetic errors when two edges are parallel and
@@ -44,80 +44,80 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	// Test axes L = A0, L = A1, L = A2
 	for (int i = 0; i < 3; i++) 
 	{
-		ra = this->GetHalfWidth()[i];
+		rotationA = this->GetHalfWidth()[i];
 
-		rb = (a_pOther->GetHalfWidth()[0] * AbsR[i][0] +
+		rotationB = (a_pOther->GetHalfWidth()[0] * AbsR[i][0] +
 			 a_pOther->GetHalfWidth()[1] * AbsR[i][1] +
 			 a_pOther->GetHalfWidth()[2] * AbsR[i][2]);
 		
-		if (std::abs(t[i]) > ra + rb)
+		if (std::abs(translation[i]) > rotationA + rotationB)
 			return i + 1;
 	}
 	// Test axes L = B0, L = B1, L = B2
 	for (int i = 0; i < 3; i++) 
 	{
-		ra = (this->GetHalfWidth()[0] * AbsR[0][i] + 
+		rotationA = (this->GetHalfWidth()[0] * AbsR[0][i] + 
 			 this->GetHalfWidth()[1] * AbsR[1][i] + 
 			 this->GetHalfWidth()[2] * AbsR[2][i]);
 
-		rb = a_pOther->GetHalfWidth()[i];
+		rotationB = a_pOther->GetHalfWidth()[i];
 		
-		if (std::abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb) 
+		if (std::abs(translation[0] * R[0][i] + translation[1] * R[1][i] + translation[2] * R[2][i]) > rotationA + rotationB) 
 			return i+4;
 	}
 
 	// Test axis L = A0 x B0
-	ra = this->GetHalfWidth()[1] * AbsR[2][0] + this->GetHalfWidth()[2] * AbsR[1][0];
-	rb = a_pOther->GetHalfWidth()[1] * AbsR[0][2] + a_pOther->GetHalfWidth()[2] * AbsR[0][1];
-	if (std::abs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) 
+	rotationA = this->GetHalfWidth()[1] * AbsR[2][0] + this->GetHalfWidth()[2] * AbsR[1][0];
+	rotationB = a_pOther->GetHalfWidth()[1] * AbsR[0][2] + a_pOther->GetHalfWidth()[2] * AbsR[0][1];
+	if (std::abs(translation[2] * R[1][0] - translation[1] * R[2][0]) > rotationA + rotationB) 
 		return 7;
 
 	// Test axis L = A0 x B1
-	ra = this->GetHalfWidth()[1] * AbsR[2][1] + this->GetHalfWidth()[2] * AbsR[1][1];
-	rb = a_pOther->GetHalfWidth()[0] * AbsR[0][2] + a_pOther->GetHalfWidth()[2] * AbsR[0][0];
-	if (std::abs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) 
+	rotationA = this->GetHalfWidth()[1] * AbsR[2][1] + this->GetHalfWidth()[2] * AbsR[1][1];
+	rotationB = a_pOther->GetHalfWidth()[0] * AbsR[0][2] + a_pOther->GetHalfWidth()[2] * AbsR[0][0];
+	if (std::abs(translation[2] * R[1][1] - translation[1] * R[2][1]) > rotationA + rotationB) 
 		return 8;
 
 	// Test axis L = A0 x B2
-	ra = this->GetHalfWidth()[1] * AbsR[2][2] + this->GetHalfWidth()[2] * AbsR[1][2];
-	rb = a_pOther->GetHalfWidth()[0] * AbsR[0][1] + a_pOther->GetHalfWidth()[1] * AbsR[0][0];
-	if (std::abs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) 
+	rotationA = this->GetHalfWidth()[1] * AbsR[2][2] + this->GetHalfWidth()[2] * AbsR[1][2];
+	rotationB = a_pOther->GetHalfWidth()[0] * AbsR[0][1] + a_pOther->GetHalfWidth()[1] * AbsR[0][0];
+	if (std::abs(translation[2] * R[1][2] - translation[1] * R[2][2]) > rotationA + rotationB) 
 		return 9;
 
 	// Test axis L = A1 x B0
-	ra = this->GetHalfWidth()[0] * AbsR[2][0] + this->GetHalfWidth()[2] * AbsR[0][0];
-	rb = a_pOther->GetHalfWidth()[1] * AbsR[1][2] + a_pOther->GetHalfWidth()[2] * AbsR[1][1];
-	if (std::abs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) 
+	rotationA = this->GetHalfWidth()[0] * AbsR[2][0] + this->GetHalfWidth()[2] * AbsR[0][0];
+	rotationB = a_pOther->GetHalfWidth()[1] * AbsR[1][2] + a_pOther->GetHalfWidth()[2] * AbsR[1][1];
+	if (std::abs(translation[0] * R[2][0] - translation[2] * R[0][0]) > rotationA + rotationB) 
 		return 10;
 
 	// Test axis L = A1 x B1
-	ra = this->GetHalfWidth()[0] * AbsR[2][1] + this->GetHalfWidth()[2] * AbsR[0][1];
-	rb = a_pOther->GetHalfWidth()[0] * AbsR[1][2] + a_pOther->GetHalfWidth()[2] * AbsR[1][0];
-	if (std::abs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) 
+	rotationA = this->GetHalfWidth()[0] * AbsR[2][1] + this->GetHalfWidth()[2] * AbsR[0][1];
+	rotationB = a_pOther->GetHalfWidth()[0] * AbsR[1][2] + a_pOther->GetHalfWidth()[2] * AbsR[1][0];
+	if (std::abs(translation[0] * R[2][1] - translation[2] * R[0][1]) > rotationA + rotationB) 
 		return 11;
 
 	// Test axis L = A1 x B2
-	ra = this->GetHalfWidth()[0] * AbsR[2][2] + this->GetHalfWidth()[2] * AbsR[0][2];
-	rb = a_pOther->GetHalfWidth()[0] * AbsR[1][1] + a_pOther->GetHalfWidth()[1] * AbsR[1][0];
-	if (std::abs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) 
+	rotationA = this->GetHalfWidth()[0] * AbsR[2][2] + this->GetHalfWidth()[2] * AbsR[0][2];
+	rotationB = a_pOther->GetHalfWidth()[0] * AbsR[1][1] + a_pOther->GetHalfWidth()[1] * AbsR[1][0];
+	if (std::abs(translation[0] * R[2][2] - translation[2] * R[0][2]) > rotationA + rotationB) 
 		return 12;
 
 	// Test axis L = A2 x B0
-	ra = this->GetHalfWidth()[0] * AbsR[1][0] + this->GetHalfWidth()[1] * AbsR[0][0];
-	rb = a_pOther->GetHalfWidth()[1] * AbsR[2][2] + a_pOther->GetHalfWidth()[2] * AbsR[2][1];
-	if (std::abs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) 
+	rotationA = this->GetHalfWidth()[0] * AbsR[1][0] + this->GetHalfWidth()[1] * AbsR[0][0];
+	rotationB = a_pOther->GetHalfWidth()[1] * AbsR[2][2] + a_pOther->GetHalfWidth()[2] * AbsR[2][1];
+	if (std::abs(translation[1] * R[0][0] - translation[0] * R[1][0]) > rotationA + rotationB) 
 		return 13;
 
 	// Test axis L = A2 x B1
-	ra = this->GetHalfWidth()[0] * AbsR[1][1] + this->GetHalfWidth()[1] * AbsR[0][1];
-	rb = a_pOther->GetHalfWidth()[0] * AbsR[2][2] + a_pOther->GetHalfWidth()[2] * AbsR[2][0];
-	if (std::abs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) 
+	rotationA = this->GetHalfWidth()[0] * AbsR[1][1] + this->GetHalfWidth()[1] * AbsR[0][1];
+	rotationB = a_pOther->GetHalfWidth()[0] * AbsR[2][2] + a_pOther->GetHalfWidth()[2] * AbsR[2][0];
+	if (std::abs(translation[1] * R[0][1] - translation[0] * R[1][1]) > rotationA + rotationB) 
 		return 14;
 
 	// Test axis L = A2 x B2
-	ra = this->GetHalfWidth()[0] * AbsR[1][2] + this->GetHalfWidth()[1] * AbsR[0][2];
-	rb = a_pOther->GetHalfWidth()[0] * AbsR[2][1] + a_pOther->GetHalfWidth()[1] * AbsR[2][0];
-	if (std::abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) 
+	rotationA = this->GetHalfWidth()[0] * AbsR[1][2] + this->GetHalfWidth()[1] * AbsR[0][2];
+	rotationB = a_pOther->GetHalfWidth()[0] * AbsR[2][1] + a_pOther->GetHalfWidth()[1] * AbsR[2][0];
+	if (std::abs(translation[1] * R[0][2] - translation[0] * R[1][2]) > rotationA + rotationB) 
 		return 15;
 
 	//if there are no planes to be found between two objects, they are colliding 
