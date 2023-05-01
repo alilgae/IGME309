@@ -23,7 +23,7 @@ Octant::Octant(uint a_nMaxLevel, uint a_nIdealEntityCount)
 	//to subdivide the octant based on how many objects are in it already an how many you IDEALLY
 	//want in it, remember each subdivision will create 8 children for this octant but not all children
 	//of those children will have children of their own
-
+	
 	std::vector<vector3> lMinMax;
 	vector3 min, max, current;
 
@@ -32,13 +32,18 @@ Octant::Octant(uint a_nMaxLevel, uint a_nIdealEntityCount)
 	{
 		current = m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetMinGlobal();
 
-		//get min and max
+		//get min
 		if (min.x > current.x) min.x = current.x;
-		if (max.x < current.x) max.x = current.x;
 		if (min.y > current.y) min.y = current.y;
-		if (max.y < current.y) max.y = current.y;
 		if (min.z > current.z) min.z = current.z;
+
+		current = m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetMaxGlobal();
+
+		//get max
+		if (max.x < current.x) max.x = current.x;
+		if (max.y < current.y) max.y = current.y;
 		if (max.z < current.z) max.z = current.z;
+
 	}
 	
 	//convert them all to be the same length 
@@ -72,14 +77,43 @@ Octant::Octant(uint a_nMaxLevel, uint a_nIdealEntityCount)
 bool Octant::IsColliding(uint a_uRBIndex)
 {
 	//Get how many objects there are in the world
+	uint count = m_pEntityMngr->GetEntityCount();
+
 	//If the index given is larger than the number of elements in the bounding object there is no collision
+	if (a_uRBIndex > count) return false;
+
+	//else get the entity
+	Entity* thisEntity = m_pEntityMngr->GetEntity(a_uRBIndex);
+
 	//As the Octree will never rotate or scale this collision is as easy as an Axis Alligned Bounding Box
 	//Get all vectors in global space (the octant ones are already in Global)
-	return true; // for the sake of startup code
+	vector3 current;
+	
+	for (int i = 0; i < this->m_EntityList.size(); i++)
+	{
+		current = m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetMaxGlobal();
+
+		if (thisEntity->GetRigidBody()->GetMinGlobal().x < current.x) continue;
+		if (thisEntity->GetRigidBody()->GetMinGlobal().y < current.y) continue;
+		if (thisEntity->GetRigidBody()->GetMinGlobal().z < current.z) continue;
+
+		current = m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetMinGlobal();
+
+		if (thisEntity->GetRigidBody()->GetMaxGlobal().x > current.x) continue;
+		if (thisEntity->GetRigidBody()->GetMaxGlobal().y > current.y) continue;
+		if (thisEntity->GetRigidBody()->GetMaxGlobal().z > current.z) continue;
+
+		return true;
+	}
+
+	
 }
 void Octant::Display(uint a_nIndex, vector3 a_v3Color)
 {
 	// Display the specified octant
+	Octant* current = (a_nIndex < m_lChild.size()) ? this->m_lChild.at(a_nIndex) : this;
+	m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, current->m_v3Center) * glm::scale(vector3(current->m_fSize)), a_v3Color);
+
 }
 void Octant::Display(vector3 a_v3Color)
 {
@@ -88,17 +122,16 @@ void Octant::Display(vector3 a_v3Color)
 	//m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center) *
 		//glm::scale(vector3(m_fSize)), a_v3Color);
 
-	//base case - if there are no children
-	if (this->m_uChildren <= 0) 
-		m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center)* glm::scale(vector3(m_fSize)), a_v3Color);
+	//base case - display this
+	m_pModelMngr->AddWireCubeToRenderList(glm::translate(IDENTITY_M4, m_v3Center)* glm::scale(vector3(m_fSize)), a_v3Color);
+	
 	//recursive case - if there are children, loop through until you find leaf nodes 
-	else 
+
+	for (int i = 0; i < this->m_uChildren; i++)
 	{
-		for (int i = 0; i < this->m_uChildren; i++)
-		{
-			return this->m_lChild.at(i)->Display(a_v3Color);
-		}
+		this->m_lChild.at(i)->Display(a_v3Color);
 	}
+
 	
 }
 void Octant::Subdivide(void)
@@ -111,10 +144,9 @@ void Octant::Subdivide(void)
 	if (m_uChildren != 0)
 		return;
 
-	//if there are less than ideal entities, return;
-
 	//Subdivide the space and allocate 8 children
 	//loop through +/- 
+	
 	for (int x = -1; x <= 1; x+=2)
 	{
 		for (int y = -1; y <= 1; y+=2) 
@@ -122,13 +154,16 @@ void Octant::Subdivide(void)
 			for (int z = -1; z <= 1; z+=2)
 			{
 				//c = pc.x +/- pc.h/2
-				float hw = (this->GetSize()/2);
+				float hw = (this->GetSize()/4);
 				vector3 center = vector3(	this->m_v3Center.x + (x * hw), 
 											this->m_v3Center.y + (y * hw), 
 											this->m_v3Center.z + (z * hw));
-				this->m_uChildren++;
-				Octant* newOct = &Octant(center, hw);
+				Octant* newOct = new Octant(center, hw*2.0f);
 				this->m_lChild.push_back(newOct);
+				this->m_pChild[this->m_uChildren] = newOct;
+				this->m_uChildren++;
+				newOct->m_uLevel = this->m_uLevel+1;
+				if(newOct->ContainsAtLeast(m_uIdealEntityCount)) newOct->Subdivide();
 			}
 		}
 		
@@ -138,15 +173,48 @@ bool Octant::ContainsAtLeast(uint a_nEntities)
 {
 	//You need to check how many entity objects live within this octant
 	uint total = 0;
+	vector3 current;
+
+	//get how many entities are inside this
+	for (int i = 0; i < m_pEntityMngr->GetEntityCount(); i++)
+	{
+		//get position of current entity
+		current = m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetMaxGlobal();
+
+		if (this->GetMinGlobal().x > current.x) continue;
+		if (this->GetMinGlobal().y > current.y) continue;
+		if (this->GetMinGlobal().z > current.z) continue;
+
+		current = m_pEntityMngr->GetEntity(i)->GetRigidBody()->GetMinGlobal();
+
+		if (this->GetMaxGlobal().x < current.x) continue;
+		if (this->GetMaxGlobal().y < current.y) continue;
+		if (this->GetMaxGlobal().z < current.z) continue;
+
+		total++;
+	}
 
 	return total > a_nEntities; //return something for the sake of start up code
 }
 void Octant::AssignIDtoEntity(void)
 {
-	//Recursive method
-	//Have to traverse the tree and make sure to tell the entity manager
-	//what octant (space) each object is at
-	m_pEntityMngr->AddDimension(0, m_uID);//example only, take the first entity and tell it its on this space
+	//base case
+	if (this->IsLeaf())
+	{
+		for (int i = 0; i < m_pEntityMngr->GetEntityCount(); i++)
+		{
+			if (this->IsColliding(i)) m_pEntityMngr->AddDimension(i, m_uID);
+		}
+	}
+
+	//recursive case
+	else
+	{
+		for (int i = 0; i < this->m_uChildren; i++)
+		{
+			m_pChild[i]->AssignIDtoEntity();
+		}
+	}
 }
 //-------------------------------------------------------------------------------------------------------------------
 // You can assume the following is fine and does not need changes, you may add onto it but the code is fine as is
